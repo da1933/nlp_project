@@ -63,7 +63,7 @@ def add_tokens_da(idx_mapping, embeddings, emb_dim):
     Sentences are padded at the end
     '''
     words_cnt = Counter(idx_mapping)
-    increment = Counter(dict.fromkeys(words, 3))
+    increment = Counter(dict.fromkeys(idx_mapping, 3))
     words_cnt = words_cnt + increment
     words_cnt['<PAD_IDX>'] = 0
     words_cnt['<UNK>'] = 1
