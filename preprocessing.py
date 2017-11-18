@@ -162,3 +162,6 @@ def tokenize_nti(text_dict, idx_mapping, pad_len):
                                     
         tokenized_data[i] = np.array(text_idx).astype(int)
     return tokenized_data
+    
+def word2vec(sent):
+    return [embeddings[idx] for idx in sent]
