@@ -87,7 +87,7 @@ def add_tokens_nti(idx_mapping, embeddings, emb_dim):
     Sentences are padded in front
     '''
     words_cnt = Counter(idx_mapping)
-    increment = Counter(dict.fromkeys(words, 3))
+    increment = Counter(dict.fromkeys(idx_mapping, 3))
     words_cnt = words_cnt + increment
     words_cnt['<PAD_IDX>'] = 0
     words_cnt['<UNK>'] = 1
@@ -163,5 +163,5 @@ def tokenize_nti(text_dict, idx_mapping, pad_len):
         tokenized_data[i] = np.array(text_idx).astype(int)
     return tokenized_data
     
-def word2vec(sent):
+def word2vec(sent,embeddings):
     return [embeddings[idx] for idx in sent]
