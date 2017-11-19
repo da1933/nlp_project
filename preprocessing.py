@@ -7,6 +7,17 @@ from collections import Counter
 import pickle as pickle
 import scipy.stats
 
+import operator
+import re
+import sys
+
+from sklearn.cross_validation import StratifiedShuffleSplit
+from sklearn.metrics import f1_score
+from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import LabelEncoder
+import random
+from random import randint
+
 def load_data(path): #load SNLI words
     '''
     Constructs 4 dictionaries with the same key values across the dictionaries
@@ -164,4 +175,10 @@ def tokenize_nti(text_dict, idx_mapping, pad_len):
     return tokenized_data
     
 def word2vec(sent,embeddings):
-    return [embeddings[idx] for idx in sent]
+    return [embeddings[idx].astype(np.float32) for idx in sent]
+
+def preprocess4(sent):
+	return ' '.join([x.strip() for x in re.split('(\W+)?', sent) if x.strip()])
+
+def batch(dataset, indexes):
+	return [dataset[i] for i in indexes]
