@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[276]:
 
 import json
 import random
@@ -18,48 +18,41 @@ import torch.nn.functional as F
 
 from preprocessing import * 
 
-
 # ## Load Data and Embeddings
-
-# In[2]:
 
 vocab_size = 50000
 emb_dim = 300
 num_classes = 3
-#do we use learning rate anywhere?
 learning_rate = .05
 glove_path = 'glove.6B.300d.txt'
-text_path = 'snli_1.0/snli_1.0_train.jsonl'
+train_text_path = 'snli_1.0/snli_1.0_train.jsonl'
+dev_text_path = 'snli_1.0/snli_1.0_dev.jsonl'
+test_text_path = 'snli_1.0/snli_1.0_test.jsonl'
 
-
-# In[3]:
-
-hypothesis, premise, label, label_enc = load_data(text_path)
-
-
-# In[4]:
+train_hypothesis, train_premise, train_label, train_label_enc = load_data(train_text_path)
+dev_hypothesis, dev_premise, dev_label, dev_label_enc = load_data(dev_text_path)
+test_hypothesis, test_premise, test_label, test_label_enc = load_data(test_text_path)
 
 embeddings, words, idx2words, ordered_words = load_embeddings(glove_path, vocab_size, emb_dim)
 
-
-# In[5]:
 
 #modifies embeddings, words, idx2words in place to add tokens
 words, embeddings = add_tokens_da(words, embeddings, emb_dim)
 idx2words = {v:k for k,v in words.items()}
 
-
-# In[6]:
-
-h_len = 32
-p_len = 32
-h_idx = tokenize_da(hypothesis, words, h_len)
-p_idx = tokenize_da(premise, words, p_len)
+h_len = 32 
+p_len = 32 
 
 
-# ## Create Batches
+train_h_idx = tokenize_da(train_hypothesis, words, h_len)
+train_p_idx = tokenize_da(train_premise, words, p_len)
 
-# In[16]:
+dev_h_idx = tokenize_da(dev_hypothesis, words, h_len)
+dev_p_idx = tokenize_da(dev_premise, words, p_len)
+
+test_h_idx = tokenize_da(test_hypothesis, words, h_len)
+test_p_idx = tokenize_da(test_premise, words, p_len)
+
 
 class DecomposableAttention(nn.Module):
     '''
@@ -247,8 +240,8 @@ class DecomposableAttention(nn.Module):
         self.embed.weight.requires_grad = False
 
 
-# In[31]:
-
+#Iterator for training our model
+#This generator gives 1 batch at a time
 def batch_iter(dataset_size, hypothesis, premise, label_enc, batch_size, hLen, pLen):  
     start        = -1 * batch_size
     order        = list(range(dataset_size))
@@ -280,17 +273,76 @@ def batch_iter(dataset_size, hypothesis, premise, label_enc, batch_size, hLen, p
         yield [hBatch, pBatch, lBatch]
 
 
-# In[17]:
+#Iterator for evaluating our model 
+#This generator gives a list of batches that can be iterated through.
+def evaluation_iter(dataset_size, hypothesis, premise, label_enc, batch_size, hLen, pLen):
+    batches = []
+    start = -1 * batch_size
+    order = list(range(dataset_size))
+    random.shuffle(order)
+
+    while start < dataset_size - batch_size:
+        start += batch_size
+        
+        hBatch = torch.LongTensor(batch_size, hLen)
+        pBatch = torch.LongTensor(batch_size, pLen)
+        lBatch = torch.LongTensor(batch_size, 1)
+
+        idx_list = order[start:start + batch_size]
+        i = 0
+        for idx in idx_list:
+            hBatch[i] = torch.from_numpy(hypothesis[idx])
+            pBatch[i] = torch.from_numpy(premise[idx])
+            lBatch[i] = label_enc[idx]
+            i += 1
+            
+        hBatch = hBatch.long().cuda()
+        pBatch = pBatch.long().cuda()
+        lBatch = Variable(lBatch).cuda()
+        
+        if len(hBatch) ==  batch_size:
+            batches.append([hBatch, pBatch, lBatch])
+        else:
+            continue       
+    return batches
+
+
+# This function outputs the accuracy on the dataset, we will use it during training.
+def evaluate(model, data_iter, criterion):
+    model.eval()
+    correct = 0
+    total = 0
+    for i in range(len(data_iter)):
+        hypothesis, premise, label = data_iter[i]
+        
+        output = model(hypothesis, premise, label)      
+        _, predicted = torch.max(output.data, 1)
+        lab = label.data.view(-1)
+        total += lab.size(0)
+        correct += (predicted == lab).sum()
+       
+	if i < 5:		 
+        	print("\n ouput label: ")
+        	print(output)
+        	print("\n predicted")
+        	print(predicted)
+        	print("\n label")
+        	print(lab.view(-1)) 
+        	print("\n Sum: ")
+        	print((predicted == lab).sum())
+      
+    return correct / float(total)
+
+
 
 PATH='saved_model'
-def training_loop(dataset_size, batch_size, num_epochs, model, data_iter, optimizer, criterion):
+def training_loop(dataset_size, batch_size, num_epochs, model, data_iter, dev_iter, optimizer, criterion):
     model.train()
     step = 0
     epoch = 0
     losses = []
     total_batches = int(dataset_size / batch_size)
-    start_time = time.time()
-    batch_time = time.time()
+    print("\n total_batches: ", total_batches)
     while epoch <= num_epochs:
         hypothesis, premise, label = next(data_iter) 
         optimizer.zero_grad()
@@ -301,43 +353,53 @@ def training_loop(dataset_size, batch_size, num_epochs, model, data_iter, optimi
         optimizer.step()
 
         if step % total_batches == 0:
+            epoch += 1
             if epoch % 5 == 0:
-                print("Epoch:",epoch,"Step:",step,"Loss:",loss.data[0])
-                torch.save(model.state_dict(), PATH) # Saves model after every epoch
-	    epoch += 1
-	step+=1
-
-# In[26]:
+                print( "Epoch:", (epoch), "Avg Loss:", np.mean(losses)/(total_batches*epoch),                        "Evaluate Loss: ", evaluate(model, dev_iter, criterion))
+            	torch.save(model.state_dict(), PATH) # Saves model after every epoch
+        step += 1
+            
 
 num_classes = 3
 dropout_rate = .2
 batch_size = 4
 hidden_size = 200
-h_len = 32
-p_len = 32
+h_len = 32 
+p_len = 32 
 num_epochs  = 40
 learning_rate = .05
+
 da = DecomposableAttention(embeddings,batch_size,hidden_size,h_len,p_len,num_classes,dropout=dropout_rate)
 
-
-# In[ ]:
 
 #filters out embedding layer which is not tuned
 optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, da.parameters()), lr=learning_rate)
 criterion = nn.CrossEntropyLoss()
 
 if torch.cuda.is_available():
-    da = da.cuda()
+    da =  da.cuda()
     criterion = criterion.cuda()
 else:
-    print('cuda unavailable')
+    print('cude unavailable')
 
-dataset_size = len(hypothesis)
-data_iter = batch_iter(dataset_size, h_idx, p_idx, label_enc, batch_size, h_len, p_len)
+#Train the Model
+train_dataset_size = len(train_hypothesis)
+data_iter = batch_iter(train_dataset_size, train_h_idx, train_p_idx, train_label_enc, batch_size, h_len, p_len)
 
-training_loop(dataset_size, batch_size, num_epochs, da, data_iter, optimizer, criterion)
+dev_dataset_size = len(dev_hypothesis)
+dev_iter = evaluation_iter(dev_dataset_size, dev_h_idx, dev_p_idx, dev_label_enc, batch_size, h_len, p_len)
+
+training_loop(train_dataset_size, batch_size, num_epochs, da, data_iter, dev_iter, optimizer, criterion)
+
+#Test the Model
+test_dataset_size = len(test_hypothesis)
+test_iter = evaluation_iter(test_dataset_size, test_h_idx, test_p_idx, test_label_enc, batch_size, h_len, p_len)
+test_accuracy = evaluate(da, test_iter, criterion)
+
+print('Accuracy of our model on the test data: %f' % (100 * test_accuracy))
 
 
-# '''Load saved model'''
-# da = DecomposableAttention(embeddings,batch_size,hidden_size,h_len,p_len,num_classes,dropout=dropout_rate)
-# da.load_state_dict(torch.load(PATH))
+'''Load saved model'''
+#da = DecomposableAttention(embeddings,batch_size,hidden_size,h_len,p_len,num_classes,dropout=dropout_rate)
+#da.load_state_dict(torch.load(PATH))
+
