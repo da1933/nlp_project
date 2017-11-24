@@ -1,3 +1,4 @@
-# nlp_project
-Download pre-trained <a href="https://nlp.stanford.edu/projects/glove/" target="_blank">GloVe Embeddings</a>.
-Download <a href="https://nlp.stanford.edu/projects/snli/" target="_blank">SNLI data</a>.
+# SNLI-decomposable-attention
+Decomposable Attention Model for Sentence Pair Classification (Pytorch Version) from paper 'A Decomposable Attention Model for Natural Language Inference' https://arxiv.org/abs/1606.01933
+
+use the preprocessing python code from https://github.com/harvardnlp/decomp-attn to generate hdf5 data files.
