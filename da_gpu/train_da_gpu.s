@@ -28,4 +28,4 @@ python train_baseline_snli.py \
 --display_interval 10000 \
 --epoch 150 \
 --weight_decay 0.00005 \
---lr 0.1
+--lr 0.001
