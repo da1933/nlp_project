@@ -83,7 +83,7 @@ def train(args):
     if args.optimizer == 'Adam':
         input_optimizer = optim.Adam(para1,  lr=args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=args.weight_decay)
         inter_atten_optimizer = optim.Adam(para2,  lr=args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=args.weight_decay)
-    if args.optimizer == 'Adagrad':
+    elif args.optimizer == 'Adagrad':
         input_optimizer = optim.Adagrad(para1, lr=args.lr, weight_decay=args.weight_decay)
         inter_atten_optimizer = optim.Adagrad(para2, lr=args.lr, weight_decay=args.weight_decay)
     elif args.optimizer == 'Adadelta':
