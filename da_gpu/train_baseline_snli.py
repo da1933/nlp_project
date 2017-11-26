@@ -79,20 +79,20 @@ def train(args):
 
     para1 = filter(lambda p: p.requires_grad, input_encoder.parameters())
     para2 = inter_atten.parameters()
-
-    '''
-    EVERYTHING USES ADAM AS OPTIMIZER
-    '''
     
+    if args.optimizer == 'Adam':
+        input_optimizer = optim.Adam(para1,  lr=args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=args.weight_decay)
+        inter_atten_optimizer = optim.Adam(para2,  lr=args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=args.weight_decay)
     if args.optimizer == 'Adagrad':
-        input_optimizer = optim.Adam(para1,  lr=args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=args.weight_decay)
-        inter_atten_optimizer = optim.Adam(para2,  lr=args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=args.weight_decay)
+        input_optimizer = optim.Adagrad(para1, lr=args.lr, weight_decay=args.weight_decay)
+        inter_atten_optimizer = optim.Adagrad(para2, lr=args.lr, weight_decay=args.weight_decay)
     elif args.optimizer == 'Adadelta':
-        input_optimizer = optim.Adam(para1,  lr=args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=args.weight_decay)
-        inter_atten_optimizer = optim.Adam(para2,  lr=args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=args.weight_decay)
+        input_optimizer = optim.Adadelta(para1, lr=args.lr)
+        inter_atten_optimizer = optim.Adadelta(para2, lr=args.lr)
     else:
         logger.info('No Optimizer.')
         sys.exit()
+        
 
     criterion = nn.NLLLoss(size_average=True)
     # criterion = nn.CrossEntropyLoss()
@@ -328,7 +328,7 @@ if __name__ == '__main__':
                         type=int, default=1)
 
     parser.add_argument('--optimizer', help='optimizer',
-                        type=str, default='Adagrad')
+                        type=str, default='Adam')
 
     parser.add_argument('--Adagrad_init', help='initial accumulating values for gradients',
                         type=float, default=0.)
