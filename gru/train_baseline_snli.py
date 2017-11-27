@@ -238,6 +238,13 @@ def train(args):
                     for t in best_dev:
                         logger.info('\t%d %.3f' %(t[0], t[1]))
                     logger.info('save model!') 
+            '''
+            early stopping if there has not been improvement in val accuracy for more than 10 epochs
+            '''
+            logger.info('Epochs since improvement in dev: %s' %(k-best_dev[-1][0]))
+            if k-best_dev[-1][0] > 10:
+                logger.info('Early stopping triggered')
+                break
 
             input_encoder.train()
             lstm.train()
