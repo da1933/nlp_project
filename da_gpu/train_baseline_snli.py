@@ -251,10 +251,10 @@ def train(args):
                         logger.info('\t%d %.3f' %(t[0], t[1]))
                     logger.info('save model!') 
             '''
-            early stopping if there has not been improvement in val accuracy for more than 5 epochs
+            early stopping if there has not been improvement in val accuracy for more than 10 epochs
             '''
             logger.info('Epochs since improvement in dev: %s' %(k-best_dev[-1][0]))
-            if k-best_dev[-1][0] > 5:
+            if k-best_dev[-1][0] > 10:
                 logger.info('Early stopping triggered')
                 break
 
@@ -264,33 +264,6 @@ def train(args):
     logger.info('training end!')
     # test
     best_model_fname = best_dev[-1][2]
-    input_encoder.load_state_dict(torch.load(best_model_fname + '_input-encoder.pt'))
-    inter_atten.load_state_dict(torch.load(best_model_fname + '_inter-atten.pt'))
-
-    input_encoder.eval()
-    inter_atten.eval()
-
-    correct = 0.
-    total = 0.
-
-    for i in range(len(test_batches)):
-        test_src_batch, test_tgt_batch, test_lbl_batch = test_batches[i]
-
-        test_src_batch = Variable(test_src_batch.cuda())
-        test_tgt_batch = Variable(test_tgt_batch.cuda())
-        test_lbl_batch = Variable(test_lbl_batch.cuda())
-
-        test_src_linear, test_tgt_linear=input_encoder(
-            test_src_batch, test_tgt_batch)
-        log_prob=inter_atten(test_src_linear, test_tgt_linear)
-
-        _, predict=log_prob.data.max(dim=1)
-        total += test_lbl_batch.data.size()[0]
-        correct += torch.sum(predict == test_lbl_batch.data)
-
-    test_acc = correct / total
-    logger.info('test-acc %.3f' % (test_acc)) 
-
 
 if __name__ == '__main__':
     parser=argparse.ArgumentParser(
