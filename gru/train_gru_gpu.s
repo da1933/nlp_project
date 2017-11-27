@@ -13,20 +13,21 @@ module load numpy/intel/1.13.1
 module load pandas/intel/py2.7/0.20.3
 
 
-python train_baseline_snli_clip.py \
+python train_baseline_snli.py \
 --train_file "/scratch/tr1312/decomp_attn/data/snli_preprocess/train.hdf5" \
 --dev_file "/scratch/tr1312/decomp_attn/data/snli_preprocess/val.hdf5" \
 --test_file "/scratch/tr1312/decomp_attn/data/snli_preprocess/test.hdf5" \
 --w2v_file "/scratch/tr1312/decomp_attn/data/snli_preprocess/glove.hdf5" \
 --log_dir "/scratch/tr1312/gru/log/" \
---log_fname "test_clip.log" \
---model_path "/scratch/tr1312/gru/output/test_clip/" \
+--log_fname "model1.log" \
+--model_path "/scratch/tr1312/gru/output/model1/" \
 --gpu_id 0 \
---lr 0.0003 \
+--lr 0.00059535 \
+--dropout 0.0143747 \
 --optimizer Adam \
 --embedding_size 300 \
---hidden_size 200 \
---max_length -15 \
+--hidden_size 111 \
+--max_length -1 \
 --display_interval 1000 \
 --epoch 150 \
---weight_decay 0.0001
+--weight_decay 0.002987

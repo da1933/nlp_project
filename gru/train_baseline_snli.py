@@ -146,7 +146,7 @@ def train(args):
 
             train_src_linear, train_tgt_linear = input_encoder(
                 train_src_batch, train_tgt_batch)
-            log_prob = lstm(train_src_linear, train_tgt_linear)
+            log_prob = lstm(train_src_linear, train_tgt_linear, p_dropout = args.dropout)
 
             loss = criterion(log_prob, train_lbl_batch)
 
@@ -301,6 +301,9 @@ if __name__ == '__main__':
     parser.add_argument('--hidden_size', help='hidden layer size',
                         type=int, default=300)
 
+    parser.add_argument('--dropout', help='dropout',
+                        type=int, default=0.2)
+                        
     parser.add_argument('--max_length', help='maximum length of training sentences,\
                         -1 means no length limit',
                         type=int, default=10)

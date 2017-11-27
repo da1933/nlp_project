@@ -182,7 +182,7 @@ class LSTMTagger(nn.Module):
 
         return h_star
     
-    def forward(self, premise, hypothesis, return_attn=False):
+    def forward(self, premise, hypothesis, return_attn=False, p_dropout=0.2):
         '''
         inputs:
             premise : batch x T
@@ -195,8 +195,8 @@ class LSTMTagger(nn.Module):
         mask_p = Variable(torch.ones((premise.size(0),premise.size(1))).type(dtype))
         mask_h = Variable(torch.ones((hypothesis.size(0),hypothesis.size(1))).type(dtype))
 
-        encoded_p = F.dropout(premise, p=0.2).type(dtype)
-        encoded_h = F.dropout(hypothesis, p=0.2).type(dtype)
+        encoded_p = F.dropout(premise, p=p_dropout).type(dtype)
+        encoded_h = F.dropout(hypothesis, p=p_dropout).type(dtype)
 
         encoded_p = encoded_p.transpose(1, 0)  # T x batch x n_embed
         encoded_h = encoded_h.transpose(1, 0)  # T x batch x n_embed
