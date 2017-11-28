@@ -2,7 +2,7 @@
 #SBATCH --job-name=train_model
 #SBATCH --output=slurm_%j.out
 #SBATCH --gres=gpu:1
-#SBATCH --mem=64000
+#SBATCH --mem=8000
 #SBATCH -t168:00:00
 #SBATCH --mail-type=END  # email me when the job ends
 #SBATCH --mail-user=tr1312@nyu.edu
@@ -19,15 +19,15 @@ python train_baseline_snli.py \
 --test_file "/scratch/tr1312/decomp_attn/data/snli_preprocess/test.hdf5" \
 --w2v_file "/scratch/tr1312/decomp_attn/data/snli_preprocess/glove.hdf5" \
 --log_dir "/scratch/tr1312/gru/log/" \
---log_fname "model1.log" \
---model_path "/scratch/tr1312/gru/output/model1/" \
+--log_fname "model04.log" \
+--model_path "/scratch/tr1312/gru/output/model04/" \
 --gpu_id 0 \
---lr 0.00059535 \
---dropout 0.0143747 \
+--lr 0.001951 \
+--dropout 0.124949 \
 --optimizer Adam \
 --embedding_size 300 \
---hidden_size 111 \
+--hidden_size 51 \
 --max_length -1 \
 --display_interval 1000 \
 --epoch 150 \
---weight_decay 0.002987
+--weight_decay 0.002101

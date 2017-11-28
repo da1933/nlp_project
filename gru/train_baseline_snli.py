@@ -302,7 +302,7 @@ if __name__ == '__main__':
                         type=int, default=300)
 
     parser.add_argument('--dropout', help='dropout',
-                        type=int, default=0.2)
+                        type=float, default=0.2)
                         
     parser.add_argument('--max_length', help='maximum length of training sentences,\
                         -1 means no length limit',
