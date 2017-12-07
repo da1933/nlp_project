@@ -72,18 +72,19 @@ def train(args):
     input_encoder = encoder(word_vecs.size(0), args.embedding_size, args.hidden_size, args.para_init)
     input_encoder.embedding.weight.data.copy_(word_vecs)
     input_encoder.embedding.weight.requires_grad = False
-    inter_atten = atten(args.hidden_size, train_lbl_size, args.para_init)
+    inter_atten = atten(args.hidden_size, train_lbl_size, args.para_init, args.dropout)
 
     input_encoder.cuda()
     inter_atten.cuda()
 
     para1 = filter(lambda p: p.requires_grad, input_encoder.parameters())
     para2 = inter_atten.parameters()
-    
+    '''
     if args.optimizer == 'Adam':
         input_optimizer = optim.Adam(para1,  lr=args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=args.weight_decay)
         inter_atten_optimizer = optim.Adam(para2,  lr=args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=args.weight_decay)
-    elif args.optimizer == 'Adagrad':
+    '''
+    if args.optimizer == 'Adagrad':
         input_optimizer = optim.Adagrad(para1, lr=args.lr, weight_decay=args.weight_decay)
         inter_atten_optimizer = optim.Adagrad(para2, lr=args.lr, weight_decay=args.weight_decay)
     elif args.optimizer == 'Adadelta':
@@ -91,8 +92,7 @@ def train(args):
         inter_atten_optimizer = optim.Adadelta(para2, lr=args.lr)
     else:
         logger.info('No Optimizer.')
-        sys.exit()
-        
+        sys.exit()    
 
     criterion = nn.NLLLoss(size_average=True)
     # criterion = nn.CrossEntropyLoss()
@@ -120,7 +120,7 @@ def train(args):
 
             input_optimizer.zero_grad()
             inter_atten_optimizer.zero_grad()
-            '''
+
             # initialize the optimizer
             if k == 0 and optim == 'Adagrad':
                 for group in input_optimizer.param_groups:
@@ -130,8 +130,7 @@ def train(args):
                 for group in inter_atten_optimizer.param_groups:
                     for p in group['params']:
                         state = inter_atten_optimizer.state[p]
-                        state['sum'] += args.Adagrad_init
-            '''
+                        state['sum'] += args.Adagrad_init    
 
             train_src_linear, train_tgt_linear = input_encoder(
                 train_src_batch, train_tgt_batch)
@@ -301,7 +300,7 @@ if __name__ == '__main__':
                         type=int, default=1)
 
     parser.add_argument('--optimizer', help='optimizer',
-                        type=str, default='Adam')
+                        type=str, default='Adagrad')
 
     parser.add_argument('--Adagrad_init', help='initial accumulating values for gradients',
                         type=float, default=0.)
@@ -328,6 +327,9 @@ if __name__ == '__main__':
 
     parser.add_argument('--weight_decay', help='l2 regularization',
                         type=float, default=5e-5)
+
+    parser.add_argument('--dropout', help='dropout',
+                        type=float, default=0.2)
 
     parser.add_argument('--model_path', help='path of model file (not include the name suffix',
                         type=str, default='/disk/scratch/bowenli/nmt/struct-attn/data/snli/experiment_struc/')
