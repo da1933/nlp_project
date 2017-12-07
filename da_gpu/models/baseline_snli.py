@@ -48,16 +48,17 @@ class atten(nn.Module):
         intra sentence attention
     '''
 
-    def __init__(self, hidden_size, label_size, para_init):
+    def __init__(self, hidden_size, label_size, para_init, dropout):
         super(atten, self).__init__()
 
         self.hidden_size = hidden_size
         self.label_size = label_size
         self.para_init = para_init
+        self.dropout = dropout
 
-        self.mlp_f = self._mlp_layers(self.hidden_size, self.hidden_size)
-        self.mlp_g = self._mlp_layers(2 * self.hidden_size, self.hidden_size)
-        self.mlp_h = self._mlp_layers(2 * self.hidden_size, self.hidden_size)
+        self.mlp_f = self._mlp_layers(self.hidden_size, self.hidden_size, self.dropout)
+        self.mlp_g = self._mlp_layers(2 * self.hidden_size, self.hidden_size, self.dropout)
+        self.mlp_h = self._mlp_layers(2 * self.hidden_size, self.hidden_size, self.dropout)
 
         self.final_linear = nn.Linear(
             self.hidden_size, self.label_size, bias=True)
@@ -71,13 +72,13 @@ class atten(nn.Module):
                 m.weight.data.normal_(0, self.para_init)
                 m.bias.data.normal_(0, self.para_init)
 
-    def _mlp_layers(self, input_dim, output_dim):
+    def _mlp_layers(self, input_dim, output_dim, dropout):
         mlp_layers = []
-        mlp_layers.append(nn.Dropout(p=0.2))
+        mlp_layers.append(nn.Dropout(p=dropout))
         mlp_layers.append(nn.Linear(
             input_dim, output_dim, bias=True))
         mlp_layers.append(nn.ReLU())
-        mlp_layers.append(nn.Dropout(p=0.2))
+        mlp_layers.append(nn.Dropout(p=dropout))
         mlp_layers.append(nn.Linear(
             output_dim, output_dim, bias=True))
         mlp_layers.append(nn.ReLU())        
