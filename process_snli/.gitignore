@@ -1,0 +1,5 @@
+*.t7
+*.dict
+*.hdf5
+*.txt
+*.out
